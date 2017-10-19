@@ -62,10 +62,14 @@ public class Player {
   public static void stopOutput() {
     if (line != null)
     {
-		line.drain();
-		line.stop();
-		line.close();
-		line = null;
+        try {
+            line.drain();
+            line.stop();
+            line.close();
+            line = null;
+        } catch (NullPointerException e) {
+            // skip
+        }
     }
   }
 

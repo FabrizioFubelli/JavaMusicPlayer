@@ -19,17 +19,18 @@ public class ClassicMediaPlayer implements MediaPlayer {
     private final String audioFile;
 
     private Player classicPlayer;
+    private long startMillis;
 
     private final Runnable playRunnable = new Runnable() {
         @Override
         public void run() {
-            System.out.println("playThread START");
             if (getStatus() == Status.PLAYING) {
                 try {
                     if (Objects.isNull(classicPlayer)) {
                         InputStream targetStream = new FileInputStream(new File(audioFile));
                         classicPlayer = new Player(targetStream);
                     }
+                    startMillis = System.currentTimeMillis();
                     classicPlayer.play();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -37,7 +38,6 @@ public class ClassicMediaPlayer implements MediaPlayer {
             } else if (getStatus() == Status.PAUSED) {
                 // DA IMPLEMENTARE
             }
-            System.out.println("playThread STOP");
         }
     };
 
@@ -82,12 +82,7 @@ public class ClassicMediaPlayer implements MediaPlayer {
                 this.playThread = new Thread(this.playRunnable);
                 this.playThread.setDaemon(true);
             }
-            System.out.println("Calling playThread.start() ...");
             this.playThread.start();
-            System.out.println("Called playThread.start()");
-            /*System.out.println("Calling playThread.run() ...");
-            this.playThread.run();
-            System.out.println("Called playThread.run()");*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -108,8 +103,7 @@ public class ClassicMediaPlayer implements MediaPlayer {
     public void _stop() {
         this.setStatus(Status.STOPPED);
         if (!Objects.isNull(this.classicPlayer)) {
-            this.playThread.interrupt();
-            this.classicPlayer.stop();
+            this.playThread.stop();
             this.classicPlayer = null;
             this.playThread = null;
         }
@@ -163,14 +157,14 @@ public class ClassicMediaPlayer implements MediaPlayer {
 
     @Override
     public Duration getCurrentTime() {
-        return null; //flacDecoder.getCurrentTime();
+        return Duration.millis(System.currentTimeMillis()-this.startMillis);
     }
 
     private int startTime = 0;
 
     @Override
     public Duration getStartTime() {
-        return new Duration(startTime*1000);
+        return Duration.seconds(startTime);
     }
 
     /**

@@ -295,6 +295,7 @@ public class Play {
                         semSong.semSignal();
                         return;
                     }
+                    if (actual.getType() == MediaPlayer.PlayerType.NORMAL) actual._stop();
                     actual._play();
                 } else {
                     if (!hasPrevious()) throw new IllegalStateException("Nessuna traccia precedente presente");
@@ -314,7 +315,9 @@ public class Play {
                         semSong.semSignal();
                         return;
                     }
+
                     Platform.runLater(() -> primaryStage.setTitle(NAME+" ("+p.getFile()+")"));
+                    if (actual.getType() == MediaPlayer.PlayerType.NORMAL) actual._stop();
                     p._play();
                 }
             } else {
