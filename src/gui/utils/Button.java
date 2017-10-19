@@ -10,9 +10,9 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static ulg.utils.UtilFunctions.SCREEN_WIDTH;
 import static gui.utils.Button.ButtonType.PAUSE;
 import static gui.utils.Button.ButtonType.PLAY;
+import static ulg.utils.UtilFunctions.SCREEN_WIDTH;
 
 /**
  * Created by: Fabrizio Fubelli
@@ -94,7 +94,7 @@ public interface Button {
          *
          * @param buttonType il bottone raffigurato
          */
-        public ButtonImage(ButtonType buttonType) {
+        ButtonImage(ButtonType buttonType) {
             this.setAccessibleRole(AccessibleRole.IMAGE_VIEW);
             this.setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
             this.firstImage = new Image(getClass().getResource(buttonType.name() + ".png").toString());
