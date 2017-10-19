@@ -59,7 +59,7 @@ public class Main extends Application {
     public static  Button.ButtonImage PREVIOUS;
     public static  Button.ButtonImage NEXT;
 
-    public static final String NAME ="Fabri MusicPlayer";
+    public static final String NAME ="JavaMusicPlayer";
     public static final StringCompare stringCompare = new StringCompare();
     public static final String[] ATTRS = {
             "File",                 // 0
@@ -455,7 +455,8 @@ public class Main extends Application {
      * @ param name il nome visualizzato del sottomenu
      * @ param i l'identificatore del sottomenu
      * @ return un sottomenu
-     *
+     */
+    /*
     private MenuItem defMenu(String name, int i) {
         MenuItem menuItem = new MenuItem(name);
         if (i == 0) { // Avvia MEGA
@@ -753,6 +754,7 @@ public class Main extends Application {
                 this.lastListenedSongs.clear();
                 this.lastListenedSongs.addAll(this.selectedSongs);
                 this.firstSongIndex = 0;
+                System.out.println(this.lastListenedSongs);
                 Play.readyForNewPlaylist(this.getSongsFromSelectedTrack(), firstSongIndex);
             }
             waitCall();
