@@ -4,6 +4,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.util.Duration;
+import javazoom.jlme.util.Player;
 import ulg.play.media.Media;
 import ulg.play.media.MediaPlayer;
 
@@ -12,9 +13,35 @@ import java.util.Objects;
 
 import static ulg.play.media.MediaPlayer.PlayerType.NORMAL;
 
-public class ClassicMediaPlayer extends Thread implements MediaPlayer {
+public class ClassicMediaPlayer implements MediaPlayer {
+
     private final PlayerType TYPE = NORMAL;
     private final String audioFile;
+
+    private Player classicPlayer;
+
+    private final Runnable playRunnable = new Runnable() {
+        @Override
+        public void run() {
+            System.out.println("playThread START");
+            if (getStatus() == Status.PLAYING) {
+                try {
+                    if (Objects.isNull(classicPlayer)) {
+                        InputStream targetStream = new FileInputStream(new File(audioFile));
+                        classicPlayer = new Player(targetStream);
+                    }
+                    classicPlayer.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else if (getStatus() == Status.PAUSED) {
+                // DA IMPLEMENTARE
+            }
+            System.out.println("playThread STOP");
+        }
+    };
+
+    private Thread playThread;
 
     /*
      * The parent {@link FLACDecoder} object; read-only.
@@ -49,8 +76,18 @@ public class ClassicMediaPlayer extends Thread implements MediaPlayer {
 
     @Override
     public void _play() {
+        this.setStatus(Status.PLAYING);
         try {
-            this.setStatus(Status.PLAYING);
+            if (Objects.isNull(this.playThread)) {
+                this.playThread = new Thread(this.playRunnable);
+                this.playThread.setDaemon(true);
+            }
+            System.out.println("Calling playThread.start() ...");
+            this.playThread.start();
+            System.out.println("Called playThread.start()");
+            /*System.out.println("Calling playThread.run() ...");
+            this.playThread.run();
+            System.out.println("Called playThread.run()");*/
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -64,14 +101,18 @@ public class ClassicMediaPlayer extends Thread implements MediaPlayer {
 
     @Override
     public void _pause() {
-        //System.out.println("FlacMediaPlayer -> pause() called (song = "+flacFile);
         this.setStatus(Status.PAUSED);
     }
 
     @Override
     public void _stop() {
-        //System.out.println("FlacMediaPlayer -> stop() called (song = "+flacFile);
         this.setStatus(Status.STOPPED);
+        if (!Objects.isNull(this.classicPlayer)) {
+            this.playThread.interrupt();
+            this.classicPlayer.stop();
+            this.classicPlayer = null;
+            this.playThread = null;
+        }
     }
 
     /**

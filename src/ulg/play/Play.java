@@ -73,9 +73,7 @@ public class Play {
 
     private static void backgroundUpdate(final Integer index, final String file) {
         try {
-            System.out.println("BackgroundUpdate OK");
             final MediaPlayer mp = prepareSong(sequenceFiles[index]);
-            System.out.println("BackgroundUpdate OK 2");
             mp.setOnEndOfMedia(() -> {
                 try {
                     next();
@@ -83,14 +81,11 @@ public class Play {
                     // skip
                 }
             });
-            System.out.println("BackgroundUpdate OK 3");
             synchronized (backgroundCalculating) {
                 backgroundCalculating.remove(file);
                 backgroundCalculating.notifyAll();
             }
-            System.out.println("BackgroundUpdate OK 4");
             sequencePlaying[index] = mp;
-            System.out.println("BackgroundUpdate OK 5");
         } catch (Exception e) {
             e.printStackTrace();
             if (backgroundCalculating.contains(file)) {
@@ -183,7 +178,7 @@ public class Play {
             semSong.semWait(request);
             final MediaPlayer p;
             try {
-                //System.out.println("\nPlay -> TASKS executing play() -> notified");
+                System.out.println("\nPlay -> TASKS executing play() -> notified");
                 isPlaying = true;
                 isPaused = false;
                 isStopped = false;
@@ -195,24 +190,24 @@ public class Play {
                     semSong.semSignal();
                     return;
                 }
-                System.out.println("flag 7");
                 updateMedia();
                 if (!canPlay()) throw new IllegalStateException("Nessuna traccia da eseguire");
                 p = sequencePlaying[sequencePlayingIndex.get()];
                 if (Objects.isNull(p) || requestNumber.get() > request) {
-                    //System.out.println("Play -> TASKS executing play() -> p is null or request is too old");
+                    System.out.println("Play -> TASKS executing play() -> p is null or request is too old");
                     semSong.semSignal();
                     return;
                 }
+                System.out.println("Play -> TASKS executing play() -> p.play() calling...");
                 p._play();
+                System.out.println("Play -> TASKS executing play() -> p.play() CALLED!");
                 final String forTitle = p.getFile();
                 Platform.runLater(() -> primaryStage.setTitle(NAME + " (" + forTitle + ")"));
                 updateButtons();
-                System.out.println("flag 9");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //System.out.println("Play -> TASKS executing play() -> end");
+            System.out.println("Play -> TASKS executing play() -> end");
             semSong.semSignal();
         });
     }
@@ -225,7 +220,7 @@ public class Play {
             updateNeedSong();
             semRequest.semSignalAll();
             try {
-                //System.out.println("\nPlay -> TASKS executing pause() -> notified");
+                System.out.println("\nPlay -> TASKS executing pause() -> notified");
                 isPlaying = false;
                 isPaused = true;
                 isStopped = false;
@@ -238,7 +233,7 @@ public class Play {
     }
 
     public static synchronized void stop() {
-        //System.out.println("\nPlay -> stop() -> called");
+        System.out.println("\nPlay -> stop() -> called");
         final Integer request = requestNumber.incrementAndGet();
         semSong.newRequest(request);
         //System.out.println("\nPlay -> stop() -> called (flag 1)");
@@ -400,24 +395,14 @@ public class Play {
     }
 
     private static void updateMedia() {
-        System.out.println("updateMedia 0");
         final int index = sequencePlayingIndex.get();
-        System.out.println("updateMedia 1");
         final File file;
         file = sequenceFiles[index];
-        System.out.println("updateMedia 2");
         if (!Objects.isNull(sequencePlaying[index])) return;
-        System.out.println("updateMedia 3");
         disableAllButtons(true);
-        System.out.println("updateMedia 4");
-        System.out.println("file: "+file.toString());
-        System.out.println("backgroundCalculating:");
-        System.out.println(backgroundCalculating.toString());
         if (backgroundCalculating.contains(file.toString())) {
-            System.out.println("updateMedia 5");
             //System.out.println("\nPlay -> updateMedia() -> waiting for backgroundCalc");
             while (backgroundCalculating.contains(file.toString())) {
-                System.out.println("updateMedia 6");
                 synchronized (backgroundCalculating) {
                     try {
                         backgroundCalculating.wait();
@@ -429,10 +414,8 @@ public class Play {
                     }
                 }
             }
-            System.out.println("updateMedia 8");
             //System.out.println("Play -> updateMedia() -> return after backgroundCalc terminated!\n");
             disableAllButtons(false);
-            System.out.println("updateMedia 9");
             return;
         }
         try {
@@ -453,10 +436,12 @@ public class Play {
     }
 
     private static void updateButtons() {
+        System.out.println("updateButtons CALLED");
         Main.PREVIOUS.setButtonDisabled(!(hasPrevious() || isPlaying() || isStopped()));
         Main.NEXT.setButtonDisabled(!hasNext());
         Main.STOP.setButtonDisabled(!(canPlay() && !isStopped()));
         PLAY_PAUSE.setPlayButton(!isPlaying());
+        System.out.println("updateButtons END");
     }
 
     private static void disableAllButtons(boolean disable) {
@@ -530,7 +515,7 @@ public class Play {
             calc.interrupt();
             if (semRequest.canPass() && !calculatingSongs.contains(needSong)) {
                 calculatingSongs.remove(s);
-                throw new IllegalStateException("Other request in queue");
+                //throw new IllegalStateException("Other request in queue");
             }
             semRequest.semSignal(); // segnala di aver completato questo processo
             calculatingSongs.remove(s);
