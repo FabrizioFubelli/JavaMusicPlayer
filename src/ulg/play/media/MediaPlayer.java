@@ -145,19 +145,19 @@ public interface MediaPlayer {
      * from the startTime. When playing actually starts the
      * status will be set to {@link Status#PLAYING}.
      */
-    void play();
+    void _play();
 
     /**
      * Start the audio from the selected second
      * @param second the start point
      */
-    void playFrom(int second);
+    void _playFrom(int second);
 
     /**
      * Pauses the player. Once the player is actually paused the status
      * will be set to {@link Status#PAUSED}.
      */
-    void pause();
+    void _pause();
 
     /**
      * Stops playing the media. This operation resets playback to startTime, and resets
@@ -165,11 +165,11 @@ public interface MediaPlayer {
      * stopped, the status will be set to {@link Status#STOPPED}. The
      * only transitions out of <code>STOPPED</code> status are to
      * {@link Status#PAUSED} and {@link Status#PLAYING} which occur after
-     * invoking {@link #pause()} or {@link #play()}, respectively.
+     * invoking {@link #_pause()} or {@link #_play()}, respectively.
      * While stopped, the player will not respond to playback position changes
      * requested by Duration.
      */
-    void stop();
+    void _stop();
 
     /**
      * Sets the audio playback volume. Its effect will be clamped to the range

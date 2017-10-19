@@ -4,28 +4,32 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.util.Duration;
-import org.jflac.FLACDecoder;
-import org.jflac.apps.Player;
 import ulg.play.media.Media;
 import ulg.play.media.MediaPlayer;
 
-import javax.sound.sampled.LineUnavailableException;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import javax.sound.sampled.*;
+import java.io.*;
 import java.util.Objects;
+
+import sun.audio.AudioPlayer;
+import sun.audio.AudioStream;
 
 import static ulg.play.media.MediaPlayer.PlayerType.NORMAL;
 
-public class ClassicMediaPlayer implements MediaPlayer {
+public class ClassicMediaPlayer extends Thread implements MediaPlayer {
     private final PlayerType TYPE = NORMAL;
     //private final List<FLACDecoder> decoders = new ArrayList<>();
     private final String audioFile;
 
+    protected static final boolean DEBUG = false;
+
+    private AudioStream as;
+    private AudioPlayer p;
+    private boolean playback;
+
     //private Player flacPlayer;
 
-    /**
+    /*
      * The parent {@link FLACDecoder} object; read-only.
      *
      * @see FLACDecoder
@@ -57,30 +61,37 @@ public class ClassicMediaPlayer implements MediaPlayer {
     }
 
     @Override
-    public void play() {
+    public void _play() {
         try {
-            //System.out.println("\nFlacMediaPlayer -> play() called (song = "+flacFile+")");
             this.setStatus(Status.PLAYING);
-            /*
-            if (Objects.isNull(flacDecoder)) {
-                try {
-                    //System.out.println("FlacMediaPlayer -> creating new flacDecoder");
-                    flacDecoder = new Player(RUNNING_SONGS).decode(flacFile);
-                    decoders.add(flacDecoder);
-                    if (!Objects.isNull(end)) flacDecoder.executeRunnableAtEnd(end);
-                } catch (IOException | LineUnavailableException e) {
-                    e.printStackTrace();
+            playback = true;
+            setRandom();
+            p.player.start(as);
+            try {
+                do {
+                } while (as.available() > 0 && playback);
+                if (playback) {
+                    _play();
                 }
-            }*/
-            //System.out.println("FlacMediaPlayer -> flacDecoder.play() called of flacDecoder with ID = "+flacDecoder.ID);
-            //flacDecoder.play();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void setRandom() {
+        try {
+            System.out.println("Now Playing: " + this.audioFile);
+            as = new AudioStream(new FileInputStream(this.audioFile));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     @Override
-    public void playFrom(int second) {  // DA SISTEMARE
+    public void _playFrom(int second) {  // DA SISTEMARE
         startTime = second;
         /*try {
             //flacDecoder = new Player(RUNNING_SONGS).decode(flacFile);
@@ -91,14 +102,14 @@ public class ClassicMediaPlayer implements MediaPlayer {
     }
 
     @Override
-    public void pause() {
+    public void _pause() {
         //System.out.println("FlacMediaPlayer -> pause() called (song = "+flacFile);
         this.setStatus(Status.PAUSED);
         //flacDecoder.pause();
     }
 
     @Override
-    public void stop() {
+    public void _stop() {
         //System.out.println("FlacMediaPlayer -> stop() called (song = "+flacFile);
         this.setStatus(Status.STOPPED);
         //decoders.forEach(FLACDecoder::stop);
@@ -210,4 +221,7 @@ public class ClassicMediaPlayer implements MediaPlayer {
         return !Objects.isNull(o) && o.getClass() == getClass() &&
                 Objects.equals(((ClassicMediaPlayer) o).audioFile, this.audioFile);
     }
+
+
+
 }

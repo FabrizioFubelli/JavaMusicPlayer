@@ -4,7 +4,7 @@ import gui.Main;
 import javafx.application.Platform;
 import ulg.play.media.Media;
 import ulg.play.media.MediaPlayer;
-import ulg.play.players.AudioMediaPlayer;
+import ulg.play.players.ClassicMediaPlayer;
 import ulg.play.utils.Flac;
 import ulg.utils.RequestSem;
 import ulg.utils.SongSem;
@@ -204,7 +204,7 @@ public class Play {
                     semSong.semSignal();
                     return;
                 }
-                p.play();
+                p._play();
                 final String forTitle = p.getFile();
                 Platform.runLater(() -> primaryStage.setTitle(NAME + " (" + forTitle + ")"));
                 updateButtons();
@@ -229,7 +229,7 @@ public class Play {
                 isPlaying = false;
                 isPaused = true;
                 isStopped = false;
-                sequencePlaying[sequencePlayingIndex.get()].pause();
+                sequencePlaying[sequencePlayingIndex.get()]._pause();
                 updateButtons();
             } catch (NullPointerException ignored) {
             }
@@ -253,7 +253,7 @@ public class Play {
                 isPaused = false;
                 isStopped = true;
                 Platform.runLater(() -> primaryStage.setTitle(NAME));
-                sequencePlaying[sequencePlayingIndex.get()].stop();
+                sequencePlaying[sequencePlayingIndex.get()]._stop();
                 updateButtons();
             } catch (Exception ignored) {
                 // skip
@@ -269,7 +269,7 @@ public class Play {
         isStopped = true;
         Platform.runLater(() -> primaryStage.setTitle(NAME));
         try {
-            sequencePlaying[sequencePlayingIndex.get()].stop();
+            sequencePlaying[sequencePlayingIndex.get()]._stop();
         } catch (NullPointerException ignored) {
             // skip
         }
@@ -293,14 +293,14 @@ public class Play {
             MediaPlayer actual = sequencePlaying[sequencePlayingIndex.get()];
             double actual_seconds = actual.getCurrentTime().toSeconds();
             MediaPlayer.Status status = actual.getStatus();
-            actual.stop();
+            actual._stop();
             if (status == MediaPlayer.Status.PLAYING) {
                 if (actual_seconds > 5 || sequencePlayingIndex.get() == 0) {
                     if (requestNumber.get() > request) {
                         semSong.semSignal();
                         return;
                     }
-                    actual.play();
+                    actual._play();
                 } else {
                     if (!hasPrevious()) throw new IllegalStateException("Nessuna traccia precedente presente");
                     sequencePlayingIndex.decrementAndGet();
@@ -320,7 +320,7 @@ public class Play {
                         return;
                     }
                     Platform.runLater(() -> primaryStage.setTitle(NAME+" ("+p.getFile()+")"));
-                    p.play();
+                    p._play();
                 }
             } else {
                 if (!(hasPrevious() || isPlaying()))
@@ -376,7 +376,7 @@ public class Play {
 
                 updateMedia();
                 MediaPlayer.Status status = actual.getStatus();
-                actual.stop();
+                actual._stop();
                 final MediaPlayer p = sequencePlaying[sequencePlayingIndex.get()];
                 if (Objects.isNull(p) || requestNumber.get() > request) {
                     semSong.semSignal();
@@ -384,7 +384,7 @@ public class Play {
                 }
                 Platform.runLater(() -> primaryStage.setTitle(NAME+" ("+p.getFile()+")"));
                 if (status == MediaPlayer.Status.PLAYING) {
-                    p.play();
+                    p._play();
                 }
             } catch (Exception ignored) {
                 // skip
@@ -552,12 +552,13 @@ public class Play {
     private static MediaPlayer playSimply(File simplyFile) {
         try {
             System.out.println("playSimply OK");
-            AudioMediaPlayer amp = null;
+            ClassicMediaPlayer cmp = null;
             System.out.println("playSimply OK 2");
-            while(Objects.isNull(amp)) {
+            while(Objects.isNull(cmp)) {
                 try {
                     System.out.println("playSimply OK 3");
-                    amp = new AudioMediaPlayer(new Media(simplyFile.toPath().toUri().toString()));
+                    //amp = new AudioMediaPlayer(new Media(simplyFile.toPath().toUri().toString()));
+                    cmp = new ClassicMediaPlayer(simplyFile);
                     System.out.println("playSimply OK 4, file:");
                     System.out.println(simplyFile.toPath().toUri().toString());
                 } catch (Exception e) {
@@ -567,10 +568,10 @@ public class Play {
                 }
                 Thread.sleep(20);
             }
-            System.out.println("playSimply OK 5");
-            amp.setAudioFile(simplyFile.toString());
-            System.out.println("playSimply OK 6 (return)");
-            return amp;
+            //System.out.println("playSimply OK 5");
+            //cmp.setAudioFile(simplyFile.toString());
+            System.out.println("playSimply OK 5 (return)");
+            return cmp;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
