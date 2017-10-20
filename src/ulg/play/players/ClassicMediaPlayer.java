@@ -29,14 +29,18 @@ public class ClassicMediaPlayer implements MediaPlayer {
                     if (Objects.isNull(classicPlayer)) {
                         InputStream targetStream = new FileInputStream(new File(audioFile));
                         classicPlayer = new Player(targetStream);
+                        startMillis = System.currentTimeMillis();
+                        classicPlayer.play();
+                    } else {
+                        classicPlayer.resume();
                     }
-                    startMillis = System.currentTimeMillis();
-                    classicPlayer.play();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else if (getStatus() == Status.PAUSED) {
-                // DA IMPLEMENTARE
+                if (!Objects.isNull(classicPlayer)) {
+                    classicPlayer.pause();
+                }
             }
         }
     };
@@ -81,8 +85,10 @@ public class ClassicMediaPlayer implements MediaPlayer {
             if (Objects.isNull(this.playThread)) {
                 this.playThread = new Thread(this.playRunnable);
                 this.playThread.setDaemon(true);
+                this.playThread.start();
+            } else {
+                this.classicPlayer.resume();
             }
-            this.playThread.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,12 +103,15 @@ public class ClassicMediaPlayer implements MediaPlayer {
     @Override
     public void _pause() {
         this.setStatus(Status.PAUSED);
+        if (!Objects.isNull(this.classicPlayer)) {
+            this.classicPlayer.pause();
+        }
     }
 
     @Override
     public void _stop() {
         this.setStatus(Status.STOPPED);
-        if (!Objects.isNull(this.classicPlayer)) {
+        if (!Objects.isNull(this.playThread)) {
             this.playThread.stop();
             this.classicPlayer = null;
             this.playThread = null;

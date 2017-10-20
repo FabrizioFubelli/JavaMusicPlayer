@@ -87,7 +87,7 @@ public class Play {
             }
             sequencePlaying[index] = mp;
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             if (backgroundCalculating.contains(file)) {
                 synchronized (backgroundCalculating) {
                     backgroundCalculating.remove(file);

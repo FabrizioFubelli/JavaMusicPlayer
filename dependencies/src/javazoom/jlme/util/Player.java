@@ -1,23 +1,3 @@
-/***************************************************************************
- *  JLayerME is a JAVA library that decodes/plays/converts MPEG 1/2 Layer 3.
- *  Project Homepage: http://www.javazoom.net/javalayer/javalayerme.html.
- *  Copyright (C) JavaZOOM 1999-2005.
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *---------------------------------------------------------------------------
- */
 package javazoom.jlme.util;
 
 
@@ -34,130 +14,107 @@ import javazoom.jlme.decoder.BitStream;
 
 
 public class Player {
-  private static Decoder decoder;
-  private static SourceDataLine line;
-  private BitStream bitstream;
-  private boolean playable = true;
-  //Runtime rt = null;
 
-
-  public Player(InputStream stream) throws Exception {
-    bitstream = new BitStream(stream);
-    //rt = Runtime.getRuntime();
-  }
-
-
-  public static void startOutput(AudioFormat playFormat) throws LineUnavailableException {
-    DataLine.Info info= new DataLine.Info(SourceDataLine.class, playFormat);
-
-    if (!AudioSystem.isLineSupported(info)) {
-      throw new LineUnavailableException("sorry, the sound format cannot be played");
+    private enum Status {
+        PLAY,
+        PAUSE,
+        STOP
     }
-    line = (SourceDataLine)AudioSystem.getLine(info);
-    line.open(playFormat);
-    line.start();
-  }
 
+    private static Status status;
+    private static SourceDataLine line;
+    private BitStream bitstream;
+    private boolean playable = true;
 
-  public static void stopOutput() {
-    if (line != null)
-    {
-        try {
-            line.drain();
-            line.stop();
-            line.close();
-            line = null;
-        } catch (NullPointerException e) {
-            // skip
+    public Player(InputStream stream) throws Exception {
+        bitstream = new BitStream(stream);
+    }
+
+    private static void startOutput(AudioFormat playFormat) throws LineUnavailableException {
+        DataLine.Info info= new DataLine.Info(SourceDataLine.class, playFormat);
+
+        if (!AudioSystem.isLineSupported(info)) {
+            throw new LineUnavailableException("sorry, the sound format cannot be played");
+        }
+        line = (SourceDataLine)AudioSystem.getLine(info);
+        line.open(playFormat);
+        line.start();
+    }
+
+    private static void stopOutput() {
+        if (line != null)
+        {
+            try {
+                line.drain();
+                line.stop();
+                line.close();
+                line = null;
+            } catch (NullPointerException e) {
+                // skip
+            }
         }
     }
-  }
 
+    public void resume() {
+        Status old_status = status;
+        status = Status.PLAY;
+        line.start();
+        if (old_status == Status.PAUSE) {
+            synchronized (this) {
+                this.notify();
+            }
+        }
+        System.out.println("resume");
+    }
 
-  /*public static void main(String args[]) throws Exception {
-    if(args.length>0){
-      String file = args[0];
-      try
-      {
-        if (file.equalsIgnoreCase("-url"))
+    public void pause() {
+        status = Status.PAUSE;
+        line.stop();
+        System.out.println("pause");
+    }
+
+    public void play() throws Exception {
+        status = Status.PLAY;
+        boolean first = true;
+        int length;
+        Header header = bitstream.readFrame();
+        Decoder decoder = new Decoder(header, bitstream);
+        System.out.println("play");
+        while (playable)
         {
-			if (args.length > 1)
-			{
-				URL u = new URL(args[1]);
-        		Player player = new Player(new BufferedInputStream(u.openStream(), 2048));
-        		System.out.println("starting");
-        		player.play();
-        		System.out.println("ending");
-			}
-			else
-			{
-				usage();
-			}
-		}
-		else
-		{
-        	Player player = new Player(new BufferedInputStream(new FileInputStream(file), 2048));
-        	System.out.println("starting");
-        	player.play();
-        	System.out.println("ending");
-		}
-      }
-      catch(Exception e){
-        System.err.println("couldn't locate the mp3 file");
-      }
+            if (status == Status.PAUSE) {
+                synchronized (this) {
+                    this.wait();
+                }
+            }
+            try
+            {
+                SampleBuffer output = decoder.decodeFrame();
+                length = output.size();
+                if (length == 0) break;
+                //{
+                if (first)
+                {
+                    first = false;
+                    System.out.println("frequency: "+ decoder.getOutputFrequency() + ", channels: " + decoder.getOutputChannels());
+                    startOutput(new AudioFormat(decoder.getOutputFrequency(), 16, decoder.getOutputChannels(), true, false));
+                }
+                line.write(output.getBuffer(), 0, length);
+                bitstream.closeFrame();
+                bitstream.readFrame();
+            } catch (Exception e)
+            {
+                break;
+            }
+        }
+        playable = false;
+        stopOutput();
+        bitstream.close();
     }
-    else
-    {
-		usage();
-	}
-    System.exit(0);
-  }*/
 
-  /*private static void usage()
-  {
-	System.out.println("Usage : ");
-	System.out.println("       java javazoom.jlme.util.Player [mp3file] [-url mp3url]");
-	System.out.println("");
-	System.out.println("            mp3file : MP3 filename to play");
-	System.out.println("            mp3url  : MP3 URL to play");
-  }*/
-
-  public void play() throws Exception {
-    boolean first = true;
-    int length;
-    Header header = bitstream.readFrame();
-    decoder = new Decoder(header, bitstream);
-    while (playable)
-    {
-      try
-      {
-      	SampleBuffer output = (SampleBuffer)decoder.decodeFrame();
-      	length = output.size();
-      	if (length == 0) break;
-      	//{
-      		if (first)
-      		{
-      		  first = false;
-      		  System.out.println("frequency: "+decoder.getOutputFrequency() + ", channels: " + decoder.getOutputChannels());
-      		  startOutput(new AudioFormat(decoder.getOutputFrequency(), 16, decoder.getOutputChannels(), true, false));
-      		}
-      		line.write(output.getBuffer(), 0, length);
-      		bitstream.closeFrame();
-      		header = bitstream.readFrame();
-      		//System.out.println("Mem:"+(rt.totalMemory() - rt.freeMemory())+"/"+rt.totalMemory());
-      	//}
-	  } catch (Exception e)
-	  	{
-			//e.printStackTrace();
-			break;
-		}
+    public void stop() {
+        status = Status.STOP;
+        playable = false;
+        System.out.println("stop");
     }
-    playable = false;
-	stopOutput();
-    bitstream.close();
-  }
-
-  public void stop() {
-    playable = false;
-  }
 }

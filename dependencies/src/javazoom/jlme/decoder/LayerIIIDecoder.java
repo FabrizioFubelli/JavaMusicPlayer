@@ -1,35 +1,5 @@
-/***************************************************************************
- *  JLayerME is a JAVA library that decodes/plays/converts MPEG 1/2 Layer 3.
- *  Project Homepage: http://www.javazoom.net/javalayer/javalayerme.html.
- *  Copyright (C) JavaZOOM 1999-2005.
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *---------------------------------------------------------------------------
- *   19 Aug 2004 - Konstantin Belous 
- *   Added code for MPEG 2 support 
- *   (used the mpglib (http://ftp.tu-clausthal.de/pub/unix/audio/mpg123) as the source for changes).  
- *---------------------------------------------------------------------------
- *   12 Aug 2004 Konstantin Belous 
- *   Replaced the Arrays.fill() call in the stereo() method 
- *   with the fill in the loop with purposes of compatibility to Java 1.1. 
- *---------------------------------------------------------------------------
- */
 package javazoom.jlme.decoder;
 
-
-import java.util.Arrays;
 
 final class LayerIIIDecoder {
 
@@ -904,8 +874,7 @@ final class LayerIIIDecoder {
 	  int i,j, k;
 	  int slen;   
 	  int n = 0;
-	  int numbits = 0;
-	  int l[] = null;
+        int l[] = null;
 	  int s[][] = null;
 	  int scf = 0;
 	  boolean i_stereo = ((header.mode() == Header.JOINT_STEREO) && ((header.mode_extension() & 0x1) != 0));	  
@@ -948,8 +917,7 @@ final class LayerIIIDecoder {
 				}
 				scf++;
 			}
-			numbits += pnt[i] * num;
-		  }
+          }
 		  else {
 			for(j = 0; j < pnt[i]; j+=3) {
 				for(k = 0; k < 3; k++) {
@@ -977,8 +945,7 @@ final class LayerIIIDecoder {
 			for(j = 0; j < pnt[i]; j++) {
 			  l[scf++] = br.hgetbits(num);
 			}
-			numbits += pnt[i] * num;
-		  }
+          }
 		  else {
 			for(j = 0; j < pnt[i]; j++)
 			  l[scf++] = 0;
@@ -1327,7 +1294,7 @@ final class LayerIIIDecoder {
     }
 
 
-    static int freq, freq3, src_line, des_line, sfb_start, sfb_start3, sfb_lines, reste, quotien;
+    private static int freq, freq3, src_line, des_line, sfb_start, sfb_start3, sfb_lines, reste, quotien;
 
     private final void reorder(final float xr[][], final int ch, final int gr) {
         GRInfo gr_info = (si.ch[ch].gr[gr]);
@@ -1567,7 +1534,6 @@ final class LayerIIIDecoder {
                             sfb = (temp << 2) - temp + j * sb;
                             sb = sfBandIndexS[12] - temp2;
                             int i = (temp2 << 2) - temp2 + j * sb;
-                            float k0 = k[0][sfb];
                             float k1 = k[1][sfb];
                             for (; sb > 0; sb--) {
                                 is_pos[i] = is_pos[sfb];
