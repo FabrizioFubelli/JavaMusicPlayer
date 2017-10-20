@@ -60,7 +60,7 @@ public class FlacMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void play() {
+    public void _play() {
         try {
         //System.out.println("\nFlacMediaPlayer -> play() called (song = "+flacFile+")");
         this.setStatus(Status.PLAYING);
@@ -82,7 +82,7 @@ public class FlacMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void playFrom(int second) {  // DA SISTEMARE
+    public void _playFrom(int second) {  // DA SISTEMARE
         startTime = second;
         try {
             flacDecoder = new Player(RUNNING_SONGS).decode(flacFile);
@@ -93,14 +93,14 @@ public class FlacMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void pause() {
+    public void _pause() {
         //System.out.println("FlacMediaPlayer -> pause() called (song = "+flacFile);
         this.setStatus(Status.PAUSED);
         flacDecoder.pause();
     }
 
     @Override
-    public void stop() {
+    public void _stop() {
         //System.out.println("FlacMediaPlayer -> stop() called (song = "+flacFile);
         this.setStatus(Status.STOPPED);
         decoders.forEach(FLACDecoder::stop);

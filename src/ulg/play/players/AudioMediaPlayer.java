@@ -304,7 +304,7 @@ public class AudioMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void play() {
+    public void _play() {
         synchronized (disposeLock) {
             if (getStatus() != Status.DISPOSED) {
                 if (playerReady) {
@@ -318,13 +318,13 @@ public class AudioMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void playFrom(int second) {
+    public void _playFrom(int second) {
         this.setStartTime(new Duration(second*1000));
-        this.play();
+        this._play();
     }
 
     @Override
-    public void pause() {
+    public void _pause() {
         synchronized (disposeLock) {
             if (getStatus() != Status.DISPOSED) {
                 if (playerReady) {
@@ -337,7 +337,7 @@ public class AudioMediaPlayer implements MediaPlayer{
     }
 
     @Override
-    public void stop() {
+    public void _stop() {
         synchronized (disposeLock) {
             //System.out.println("AudioMediaPlayer -> stop() called");
             if (getStatus() != Status.DISPOSED) {
@@ -521,7 +521,7 @@ public class AudioMediaPlayer implements MediaPlayer{
                 @Override
                 protected void invalidated() {
                     if (autoPlay.get()) {
-                        play();
+                        _play();
                     } else {
                         playRequested = false;
                     }

@@ -4,7 +4,7 @@ import gui.Main;
 import javafx.application.Platform;
 import ulg.play.media.Media;
 import ulg.play.media.MediaPlayer;
-import ulg.play.players.AudioMediaPlayer;
+import ulg.play.players.ClassicMediaPlayer;
 import ulg.play.utils.Flac;
 import ulg.utils.RequestSem;
 import ulg.utils.SongSem;
@@ -119,7 +119,7 @@ public class Play {
             Runnable r = () -> {
                 try {
                     backgroundUpdate(j, file);
-                } catch (ArrayIndexOutOfBoundsException ignored) {
+                } catch (ArrayIndexOutOfBoundsException e) {
                     calculatingSongs.remove(file);
                 }
             };
@@ -178,7 +178,7 @@ public class Play {
             semSong.semWait(request);
             final MediaPlayer p;
             try {
-                //System.out.println("\nPlay -> TASKS executing play() -> notified");
+                System.out.println("\nPlay -> TASKS executing play() -> notified");
                 isPlaying = true;
                 isPaused = false;
                 isStopped = false;
@@ -186,28 +186,28 @@ public class Play {
 
                 updateNeedSong();
                 semRequest.semSignalAll();
-
                 if (requestNumber.get() > request) {
                     semSong.semSignal();
                     return;
                 }
-
                 updateMedia();
                 if (!canPlay()) throw new IllegalStateException("Nessuna traccia da eseguire");
                 p = sequencePlaying[sequencePlayingIndex.get()];
                 if (Objects.isNull(p) || requestNumber.get() > request) {
-                    //System.out.println("Play -> TASKS executing play() -> p is null or request is too old");
+                    System.out.println("Play -> TASKS executing play() -> p is null or request is too old");
                     semSong.semSignal();
                     return;
                 }
-                p.play();
+                System.out.println("Play -> TASKS executing play() -> p.play() calling...");
+                p._play();
+                System.out.println("Play -> TASKS executing play() -> p.play() CALLED!");
                 final String forTitle = p.getFile();
                 Platform.runLater(() -> primaryStage.setTitle(NAME + " (" + forTitle + ")"));
                 updateButtons();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //System.out.println("Play -> TASKS executing play() -> end");
+            System.out.println("Play -> TASKS executing play() -> end");
             semSong.semSignal();
         });
     }
@@ -220,11 +220,11 @@ public class Play {
             updateNeedSong();
             semRequest.semSignalAll();
             try {
-                //System.out.println("\nPlay -> TASKS executing pause() -> notified");
+                System.out.println("\nPlay -> TASKS executing pause() -> notified");
                 isPlaying = false;
                 isPaused = true;
                 isStopped = false;
-                sequencePlaying[sequencePlayingIndex.get()].pause();
+                sequencePlaying[sequencePlayingIndex.get()]._pause();
                 updateButtons();
             } catch (NullPointerException ignored) {
             }
@@ -233,7 +233,7 @@ public class Play {
     }
 
     public static synchronized void stop() {
-        //System.out.println("\nPlay -> stop() -> called");
+        System.out.println("\nPlay -> stop() -> called");
         final Integer request = requestNumber.incrementAndGet();
         semSong.newRequest(request);
         //System.out.println("\nPlay -> stop() -> called (flag 1)");
@@ -248,7 +248,7 @@ public class Play {
                 isPaused = false;
                 isStopped = true;
                 Platform.runLater(() -> primaryStage.setTitle(NAME));
-                sequencePlaying[sequencePlayingIndex.get()].stop();
+                sequencePlaying[sequencePlayingIndex.get()]._stop();
                 updateButtons();
             } catch (Exception ignored) {
                 // skip
@@ -264,7 +264,7 @@ public class Play {
         isStopped = true;
         Platform.runLater(() -> primaryStage.setTitle(NAME));
         try {
-            sequencePlaying[sequencePlayingIndex.get()].stop();
+            sequencePlaying[sequencePlayingIndex.get()]._stop();
         } catch (NullPointerException ignored) {
             // skip
         }
@@ -288,14 +288,15 @@ public class Play {
             MediaPlayer actual = sequencePlaying[sequencePlayingIndex.get()];
             double actual_seconds = actual.getCurrentTime().toSeconds();
             MediaPlayer.Status status = actual.getStatus();
-            actual.stop();
+            actual._stop();
             if (status == MediaPlayer.Status.PLAYING) {
                 if (actual_seconds > 5 || sequencePlayingIndex.get() == 0) {
                     if (requestNumber.get() > request) {
                         semSong.semSignal();
                         return;
                     }
-                    actual.play();
+                    if (actual.getType() == MediaPlayer.PlayerType.NORMAL) actual._stop();
+                    actual._play();
                 } else {
                     if (!hasPrevious()) throw new IllegalStateException("Nessuna traccia precedente presente");
                     sequencePlayingIndex.decrementAndGet();
@@ -314,8 +315,10 @@ public class Play {
                         semSong.semSignal();
                         return;
                     }
+
                     Platform.runLater(() -> primaryStage.setTitle(NAME+" ("+p.getFile()+")"));
-                    p.play();
+                    if (actual.getType() == MediaPlayer.PlayerType.NORMAL) actual._stop();
+                    p._play();
                 }
             } else {
                 if (!(hasPrevious() || isPlaying()))
@@ -371,7 +374,7 @@ public class Play {
 
                 updateMedia();
                 MediaPlayer.Status status = actual.getStatus();
-                actual.stop();
+                actual._stop();
                 final MediaPlayer p = sequencePlaying[sequencePlayingIndex.get()];
                 if (Objects.isNull(p) || requestNumber.get() > request) {
                     semSong.semSignal();
@@ -379,7 +382,7 @@ public class Play {
                 }
                 Platform.runLater(() -> primaryStage.setTitle(NAME+" ("+p.getFile()+")"));
                 if (status == MediaPlayer.Status.PLAYING) {
-                    p.play();
+                    p._play();
                 }
             } catch (Exception ignored) {
                 // skip
@@ -406,6 +409,9 @@ public class Play {
                 synchronized (backgroundCalculating) {
                     try {
                         backgroundCalculating.wait();
+                        System.out.println("updateMedia 7");
+                        System.out.println("backgroundCalculating:");
+                        System.out.println(backgroundCalculating.toString());
                     } catch (InterruptedException ignored) {
                         break;
                     }
@@ -433,10 +439,12 @@ public class Play {
     }
 
     private static void updateButtons() {
+        System.out.println("updateButtons CALLED");
         Main.PREVIOUS.setButtonDisabled(!(hasPrevious() || isPlaying() || isStopped()));
         Main.NEXT.setButtonDisabled(!hasNext());
         Main.STOP.setButtonDisabled(!(canPlay() && !isStopped()));
         PLAY_PAUSE.setPlayButton(!isPlaying());
+        System.out.println("updateButtons END");
     }
 
     private static void disableAllButtons(boolean disable) {
@@ -510,15 +518,18 @@ public class Play {
             calc.interrupt();
             if (semRequest.canPass() && !calculatingSongs.contains(needSong)) {
                 calculatingSongs.remove(s);
-                throw new IllegalStateException("Other request in queue");
+                //throw new IllegalStateException("Other request in queue");
             }
             semRequest.semSignal(); // segnala di aver completato questo processo
             calculatingSongs.remove(s);
             return player.get();
         } else {
             String s3 = s.substring(len - 4);
+            System.out.println("prepareSong OK, type: "+s3);
             if (Objects.equals(s3, ".mp3") || Objects.equals(s3, ".wav")) {
+                System.out.println("prepareSong OK 2");
                 calculatingSongs.remove(s);
+                System.out.println("prepareSong OK 3 (return)");
                 return playSimply(song);
             }
         }
@@ -528,17 +539,27 @@ public class Play {
 
     private static MediaPlayer playSimply(File simplyFile) {
         try {
-            AudioMediaPlayer amp = null;
-            while(Objects.isNull(amp)) {
+            System.out.println("playSimply OK");
+            ClassicMediaPlayer cmp = null;
+            System.out.println("playSimply OK 2");
+            while(Objects.isNull(cmp)) {
                 try {
-                    amp = new AudioMediaPlayer(new Media(simplyFile.toPath().toUri().toString()));
+                    System.out.println("playSimply OK 3");
+                    //amp = new AudioMediaPlayer(new Media(simplyFile.toPath().toUri().toString()));
+                    cmp = new ClassicMediaPlayer(simplyFile);
+                    System.out.println("playSimply OK 4, file:");
+                    System.out.println(simplyFile.toPath().toUri().toString());
                 } catch (Exception e) {
-                    // continue
+                    //e.printStackTrace();
+                    throw e;
+                    // skip
                 }
                 Thread.sleep(20);
             }
-            amp.setAudioFile(simplyFile.toString());
-            return amp;
+            //System.out.println("playSimply OK 5");
+            //cmp.setAudioFile(simplyFile.toString());
+            System.out.println("playSimply OK 5 (return)");
+            return cmp;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
